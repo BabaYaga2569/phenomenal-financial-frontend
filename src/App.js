@@ -196,4 +196,31 @@ function App() {
         </div>
       )}
 
-      <div className="connect-sectio
+      <div className="connect-section">
+        <button
+          onClick={() => open()}
+          disabled={!ready || !linkToken}
+          className="connect-button"
+        >
+          {!linkToken ? '⏳ Preparing Plaid...' : 
+           !ready ? '⏳ Loading Plaid...' : 
+           '🚀 Connect Your Bank'}
+        </button>
+        
+        <div className="debug-section">
+          <button onClick={runDebugTest} className="debug-button">
+            🧪 Run Debug Test
+          </button>
+          <p className="debug-info">
+            Backend: {API_BASE_URL}<br/>
+            User ID: {userId}<br/>
+            Link Token: {linkToken ? '✅ Ready' : '⏳ Creating...'}<br/>
+            Plaid Ready: {ready ? '✅ Yes' : '❌ No'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
