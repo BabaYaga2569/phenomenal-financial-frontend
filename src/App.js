@@ -5,6 +5,25 @@ const App = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [useMockData, setUseMockData] = useState(false);
+
+  // Mock data for testing the UI
+  const mockAccounts = [
+    {
+      id: '1',
+      institution_name: 'SoFi',
+      type: 'checking',
+      balance: 400.00,
+      mask: '1234'
+    },
+    {
+      id: '2',
+      institution_name: 'Bank of America',
+      type: 'checking',
+      balance: 2400.00,
+      mask: '5678'
+    }
+  ];
 
   useEffect(() => {
     fetchAccounts();
@@ -14,13 +33,26 @@ const App = () => {
     try {
       setLoading(true);
       setError(null);
-      // FIXED: Using your actual backend URL
+      
+      if (useMockData) {
+        // Use mock data for UI testing
+        setTimeout(() => {
+          setAccounts(mockAccounts);
+          setLoading(false);
+        }, 1000);
+        return;
+      }
+
       const response = await fetch('https://phenomenal-financial-backend.onrender.com/api/accounts');
-      if (!response.ok) throw new Error('Failed to fetch accounts');
+      if (!response.ok) throw new Error(`Failed to fetch accounts: ${response.status}`);
       const data = await response.json();
       setAccounts(data);
     } catch (err) {
+      console.error('API Error:', err);
       setError(err.message);
+      // Auto-switch to mock data if API fails
+      setUseMockData(true);
+      setAccounts(mockAccounts);
     } finally {
       setLoading(false);
     }
@@ -54,21 +86,6 @@ const App = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="app">
-        <div className="error-container">
-          <div className="error-icon">⚠️</div>
-          <h2>Connection Error</h2>
-          <p>{error}</p>
-          <button onClick={fetchAccounts} className="retry-button">
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="app">
       {/* Header Section */}
@@ -95,6 +112,13 @@ const App = () => {
 
       {/* Main Dashboard */}
       <main className="dashboard">
+        {/* Connection Status */}
+        {useMockData && (
+          <div className="status-banner">
+            🧪 Demo Mode - Using sample data while fixing API connection
+          </div>
+        )}
+
         {/* Total Balance Card */}
         <div className="balance-card main-balance">
           <div className="card-header">
@@ -105,7 +129,7 @@ const App = () => {
             {formatCurrency(getTotalBalance())}
           </div>
           <div className="balance-subtitle">
-            Live from {accounts.length} connected account{accounts.length !== 1 ? 's' : ''}
+            {useMockData ? 'Demo data from' : 'Live from'} {accounts.length} connected account{accounts.length !== 1 ? 's' : ''}
           </div>
         </div>
 
@@ -123,7 +147,7 @@ const App = () => {
                     <p className="account-type">{account.type}</p>
                   </div>
                 </div>
-                <div className="account-status online"></div>
+                <div className={`account-status ${useMockData ? 'demo' : 'online'}`}></div>
               </div>
               
               <div className="account-balance">
@@ -139,7 +163,7 @@ const App = () => {
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Last Updated</span>
-                  <span className="detail-value">Just now</span>
+                  <span className="detail-value">{useMockData ? 'Demo data' : 'Just now'}</span>
                 </div>
               </div>
             </div>
@@ -150,7 +174,7 @@ const App = () => {
         <div className="quick-actions">
           <button className="action-button primary" onClick={fetchAccounts}>
             <span className="button-icon">🔄</span>
-            Refresh Accounts
+            {useMockData ? 'Try Real API' : 'Refresh Accounts'}
           </button>
           <button className="action-button secondary">
             <span className="button-icon">📊</span>
