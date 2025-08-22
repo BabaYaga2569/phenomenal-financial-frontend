@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './App.css';
 
 const App = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [, setError] = useState(null);
   const [useMockData, setUseMockData] = useState(false);
 
   // Mock data for testing the UI
-  const mockAccounts = [
+  const mockAccounts = useMemo(() => [
     {
       id: '1',
       institution_name: 'SoFi',
@@ -23,13 +23,9 @@ const App = () => {
       balance: 2400.00,
       mask: '5678'
     }
-  ];
+  ], []);
 
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -56,7 +52,11 @@ const App = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [useMockData, mockAccounts]);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {

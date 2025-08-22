@@ -1,6 +1,7 @@
 {
   "name": "phenomenal-financial-frontend",
   "version": "1.0.0",
+  "homepage": "https://babayaga2569.github.io/phenomenal-financial-frontend",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
