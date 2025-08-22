@@ -93,7 +93,7 @@ const App = () => {
         <div className="header-content">
           <h1 className="app-title">
             <span className="title-icon">💰</span>
-            PayCheck Tracker
+            Family Financial Tracker
           </h1>
           <p className="header-subtitle">Live Cash Flow Management</p>
           <div className="current-time">
