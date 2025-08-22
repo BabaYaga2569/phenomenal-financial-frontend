@@ -13,7 +13,9 @@ const App = () => {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/accounts');
+      setError(null);
+      // FIXED: Using your actual backend URL
+      const response = await fetch('https://phenomenal-financial-backend.onrender.com/api/accounts');
       if (!response.ok) throw new Error('Failed to fetch accounts');
       const data = await response.json();
       setAccounts(data);
@@ -46,7 +48,7 @@ const App = () => {
       <div className="app">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p className="loading-text">Loading your accounts...</p>
+          <p className="loading-text">Connecting to your banks...</p>
         </div>
       </div>
     );
