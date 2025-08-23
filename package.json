@@ -1,1 +1,41 @@
-{"name": "phenomenal-financial-frontend", "version": "1.0.1", "description": "A phenomenal financial frontend.", "main": "index.js", "scripts": { "test": "echo \"Error: no test specified\" && exit 1" }, "repository": { "type": "git", "url": "git+https://github.com/BabaYaga2569/phenomenal-financial-frontend.git" }, "author": "BabaYaga2569", "license": "ISC"}
+{
+  "name": "phenomenal-financial-frontend",
+  "version": "1.0.1", 
+  "description": "A phenomenal financial frontend.",
+  "private": true,
+  "homepage": "https://babayaga2569.github.io/phenomenal-financial-frontend",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1"
+  },
+  "devDependencies": {
+    "gh-pages": "^4.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BabaYaga2569/phenomenal-financial-frontend.git"
+  },
+  "author": "BabaYaga2569",
+  "license": "ISC"
+}
