@@ -1,159 +1,248 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-const PhenomenalFamilyTracker = () => {
+const PhenomenalFinancialTracker = () => {
   // Enhanced state management
   const [activeView, setActiveView] = useState('dashboard');
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showPlaidModal, setShowPlaidModal] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', content: '' });
   const [aiChatInput, setAiChatInput] = useState('');
   const [aiMessages, setAiMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [connectionProgress, setConnectionProgress] = useState(0);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const neuralCanvasRef = useRef(null);
 
-  // Family Financial Data - Enhanced Demo
-  const [familyData] = useState({
-    members: [
-      {
-        id: 'steve',
-        name: 'Steve Colburn',
-        nextPayday: '2025-08-29',
-        payAmount: 3247.85,
-        payFrequency: 'bi-weekly',
-        accounts: ['chase_checking', 'bofa_savings']
-      },
-      {
-        id: 'wife',
-        name: 'Sarah Colburn', 
-        nextPayday: '2025-08-25',
-        payAmount: 2890.50,
-        payFrequency: 'bi-weekly',
-        accounts: ['wells_checking', 'ally_savings']
-      }
-    ],
+  // Enhanced Demo Data - Matches HTML version
+  const [appData] = useState({
+    user: {
+      name: 'Steve Colburn',
+      avatar: 'S'
+    },
+    totals: {
+      netWorth: 24847.82,
+      monthlySpending: -2891.47,
+      connectedBanks: 2,
+      totalTransactions: 247,
+      predictedCashFlow: 1247.83,
+      aiHealthScore: 8.7,
+      confidenceScore: 94.3
+    },
+    ai: {
+      status: 'Expert Level',
+      patternsLearned: 347,
+      accuracyScore: 96.7,
+      modelsActive: 15,
+      dataPoints: 2847
+    },
     accounts: [
       {
         id: 'chase_checking',
         name: 'Chase Total Checking',
-        owner: 'steve',
+        institution: 'Chase',
         balance: 14247.83,
-        type: 'checking',
-        lastSync: new Date()
+        mask: '••••4829',
+        type: 'Checking',
+        lastSync: new Date(),
+        connected: true
       },
       {
-        id: 'bofa_savings', 
-        name: 'Bank of America Savings',
-        owner: 'steve',
+        id: 'bofa_savings',
+        name: 'Bank of America Advantage', 
+        institution: 'BofA',
         balance: 10599.99,
-        type: 'savings',
-        lastSync: new Date()
-      },
-      {
-        id: 'wells_checking',
-        name: 'Wells Fargo Checking',
-        owner: 'wife',
-        balance: 8420.33,
-        type: 'checking',
-        lastSync: new Date()
-      },
-      {
-        id: 'ally_savings',
-        name: 'Ally Online Savings',
-        owner: 'wife', 
-        balance: 15780.45,
-        type: 'savings',
-        lastSync: new Date()
+        mask: '••••7392',
+        type: 'Savings',
+        lastSync: new Date(),
+        connected: true
       }
     ],
     transactions: [
-      { id: 1, merchant: 'Starbucks #1247', amount: -6.47, category: 'Food & Dining', date: '2025-08-17', accountId: 'chase_checking', owner: 'steve', aiConfidence: 97 },
-      { id: 2, merchant: 'Uber Trip', amount: -14.23, category: 'Transportation', date: '2025-08-17', accountId: 'chase_checking', owner: 'steve', aiConfidence: 95 },
-      { id: 3, merchant: 'Whole Foods Market', amount: -89.34, category: 'Groceries', date: '2025-08-16', accountId: 'chase_checking', owner: 'steve', aiConfidence: 98 },
-      { id: 4, merchant: 'Steve Payroll', amount: 3247.85, category: 'Income', date: '2025-08-15', accountId: 'chase_checking', owner: 'steve', aiConfidence: 99 },
-      { id: 5, merchant: 'Target Store', amount: -127.89, category: 'Shopping', date: '2025-08-14', accountId: 'wells_checking', owner: 'wife', aiConfidence: 94 },
-      { id: 6, merchant: 'Sarah Payroll', amount: 2890.50, category: 'Income', date: '2025-08-13', accountId: 'wells_checking', owner: 'wife', aiConfidence: 99 },
-      { id: 7, merchant: 'Shell Gas Station', amount: -52.34, category: 'Transportation', date: '2025-08-13', accountId: 'wells_checking', owner: 'wife', aiConfidence: 96 },
-      { id: 8, merchant: 'Netflix Subscription', amount: -15.99, category: 'Entertainment', date: '2025-08-12', accountId: 'chase_checking', owner: 'steve', aiConfidence: 99 },
-      { id: 9, merchant: 'Grocery Store', amount: -156.78, category: 'Groceries', date: '2025-08-11', accountId: 'wells_checking', owner: 'wife', aiConfidence: 98 },
-      { id: 10, merchant: 'Rent Payment', amount: -1850.00, category: 'Housing', date: '2025-08-01', accountId: 'chase_checking', owner: 'steve', aiConfidence: 99 }
+      { id: 1, merchant: 'Starbucks #1247', amount: -6.47, category: 'Food & Dining', date: '2025-08-17', confidence: 97, account: 'Chase ••4829', new: true },
+      { id: 2, merchant: 'Uber Trip', amount: -14.23, category: 'Transportation', date: '2025-08-17', confidence: 95, account: 'Chase ••4829', new: true },
+      { id: 3, merchant: 'Whole Foods Market', amount: -89.34, category: 'Groceries', date: '2025-08-16', confidence: 98, account: 'Chase ••4829' },
+      { id: 4, merchant: 'Payroll Direct Deposit', amount: 3247.85, category: 'Income', date: '2025-08-15', confidence: 99, account: 'Chase ••4829' },
+      { id: 5, merchant: 'Target Store #1847', amount: -127.89, category: 'Shopping', date: '2025-08-14', confidence: 94, account: 'Chase ••4829' },
+      { id: 6, merchant: 'Shell Gas Station', amount: -52.34, category: 'Transportation', date: '2025-08-13', confidence: 96, account: 'BofA ••7392' }
     ],
-    predictedTransactions: [
-      { date: '2025-08-18', description: 'Starbucks (Predicted)', amount: -6.50, owner: 'steve', confidence: 87 },
-      { date: '2025-08-20', description: 'Grocery Shopping (Tuesday)', amount: -89.00, owner: 'steve', confidence: 94 },
-      { date: '2025-08-22', description: 'Comcast Internet Bill', amount: -89.99, owner: 'steve', confidence: 99 },
-      { date: '2025-08-25', description: 'SARAH PAYDAY', amount: 2890.50, owner: 'wife', confidence: 99 },
-      { date: '2025-08-25', description: 'PG&E Electric Bill', amount: -127.00, owner: 'steve', confidence: 92 },
-      { date: '2025-08-29', description: 'STEVE PAYDAY', amount: 3247.85, owner: 'steve', confidence: 99 }
+    predictions: [
+      { date: '2025-08-18', description: 'Starbucks (Predicted)', amount: -6.50, confidence: 87 },
+      { date: '2025-08-20', description: 'Grocery Shopping (Tuesday)', amount: -89.00, confidence: 94 },
+      { date: '2025-08-22', description: 'Comcast Internet Bill', amount: -89.99, confidence: 99 },
+      { date: '2025-08-25', description: 'PG&E Electric Bill', amount: -127.00, confidence: 92 },
+      { date: '2025-08-29', description: 'PAYDAY - Direct Deposit', amount: 3247.85, confidence: 99 }
+    ],
+    insights: [
+      { title: 'Transactions Analyzed', value: '247', type: 'data' },
+      { title: 'Savings Opportunity', value: '$47/mo', type: 'optimization' },
+      { title: 'Best Grocery Day', value: 'Tuesday', type: 'pattern' },
+      { title: 'Unused Subscriptions', value: '3', type: 'waste' }
+    ],
+    categories: [
+      { name: 'Housing', amount: 1850, percentage: 64, budget: 1850, status: 'on-target' },
+      { name: 'Groceries', amount: 356, percentage: 12, budget: 420, status: 'under' },
+      { name: 'Food & Dining', amount: 313, percentage: 11, budget: 255, status: 'over' },
+      { name: 'Transportation', amount: 287, percentage: 10, budget: 300, status: 'on-target' }
     ],
     bills: [
-      { name: 'Rent', amount: 1850, due: '2025-08-30', owner: 'steve', type: 'housing' },
-      { name: 'Electric', amount: 127, due: '2025-08-25', owner: 'steve', type: 'utilities' },
-      { name: 'Internet', amount: 89.99, due: '2025-08-22', owner: 'steve', type: 'utilities' },
-      { name: 'Car Payment', amount: 485, due: '2025-08-28', owner: 'wife', type: 'transportation' }
+      { name: 'Rent Payment', amount: 1850, due: 'Aug 30', status: 'due-soon', type: 'housing' },
+      { name: 'PG&E Electric', amount: 127, due: 'Aug 25', status: 'due-soon', type: 'utilities' },
+      { name: 'Comcast Internet', amount: 89.99, due: 'Aug 22', status: 'due-soon', type: 'utilities' }
+    ],
+    subscriptions: [
+      { name: 'Netflix Standard', amount: 15.99, usage: 'daily', status: 'keep' },
+      { name: 'Spotify Premium', amount: 9.99, usage: 'daily', status: 'keep' },
+      { name: 'Adobe Creative', amount: 52.99, usage: '67 days unused', status: 'cancel' },
+      { name: 'Gym Membership', amount: 89.99, usage: '12x this month', status: 'keep' }
     ]
   });
-
-  // AI Responses
-  const aiResponses = {
-    cashflow: [
-      "Based on your family's dual-income pattern, I predict excellent cash flow! Steve's next payday is Aug 29 ($3,247), Sarah's is Aug 25 ($2,890). Your combined monthly income is $12,276 with current spending at $8,934. That's a healthy 27% savings rate!",
-      "Your family cash flow analysis shows Steve has $24,847 total available, Sarah has $24,200. Until next paydays, you have $3,894 combined daily spending capacity. Very strong financial position!"
-    ],
-    family: [
-      "I love analyzing dual-income families! Your household income timing is perfectly staggered - Sarah gets paid 4 days before Steve, which smooths cash flow beautifully. This natural offset prevents any cash crunches.",
-      "Family financial health score: 9.2/10! Steve's Tuesday grocery shopping saves money, Sarah's consistent savings transfers show discipline. Combined you're ahead of 92% of households your age!"
-    ],
-    optimization: [
-      "Smart family opportunity: Consolidate your 4 accounts into 2 high-yield savings for better interest. Also, coordinate your grocery shopping - Steve's Tuesday pattern at Whole Foods is optimal, Sarah should join this routine!",
-      "I notice Steve spends $124/month on coffee while Sarah spends $34. Suggest making coffee at home together - save $118/month ($1,416/year) while spending quality time!"
-    ]
-  };
-
-  // Initialize loading
-  useEffect(() => {
-    setTimeout(() => {
-      setLoading(false);
-      setAiMessages([{
-        type: 'ai',
-        message: "Hello Steve and Sarah! I've analyzed your family's financial data across 4 accounts. Your dual-income setup is excellent with perfectly staggered paydays. Want to see your combined cash flow prediction?",
-        timestamp: new Date()
-      }]);
-    }, 2000);
-  }, []);
-
-  // Calculate totals
-  const totalBalance = familyData.accounts.reduce((sum, acc) => sum + acc.balance, 0);
-  const monthlyIncome = familyData.members.reduce((sum, member) => sum + (member.payAmount * 2), 0);
-  const monthlySpending = familyData.transactions
-    .filter(t => t.amount < 0 && new Date(t.date).getMonth() === 7)
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-  // Cash flow until next paydays
-  const getCashFlowToNextPaydays = () => {
-    const today = new Date('2025-08-17');
-    const stevePayday = new Date('2025-08-29');
-    const sarahPayday = new Date('2025-08-25');
-    
-    const steveDays = Math.ceil((stevePayday - today) / (1000 * 60 * 60 * 24));
-    const sarahDays = Math.ceil((sarahPayday - today) / (1000 * 60 * 60 * 24));
-    
-    return {
-      steve: { days: steveDays, amount: 3247.85 },
-      sarah: { days: sarahDays, amount: 2890.50 }
-    };
-  };
-
-  const nextPaydays = getCashFlowToNextPaydays();
 
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
-    }).format(amount);
+    }).format(Math.abs(amount));
   };
 
-  // AI Assistant Functions
+  // Initialize neural network visualization
+  useEffect(() => {
+    if (neuralCanvasRef.current) {
+      const canvas = neuralCanvasRef.current;
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      const nodes = [];
+      const connections = [];
+
+      // Create nodes
+      for (let i = 0; i < 15; i++) {
+        nodes.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          pulse: Math.random() * Math.PI * 2
+        });
+      }
+
+      // Create connections
+      nodes.forEach((node, i) => {
+        nodes.forEach((otherNode, j) => {
+          if (i !== j) {
+            const distance = Math.sqrt(
+              Math.pow(node.x - otherNode.x, 2) + 
+              Math.pow(node.y - otherNode.y, 2)
+            );
+            if (distance < 120) {
+              connections.push({ from: i, to: j, opacity: Math.random() * 0.5 + 0.2 });
+            }
+          }
+        });
+      });
+
+      let animationFrame;
+      
+      const animate = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Update and draw connections
+        connections.forEach(conn => {
+          const fromNode = nodes[conn.from];
+          const toNode = nodes[conn.to];
+          
+          ctx.strokeStyle = `rgba(78, 205, 196, ${conn.opacity * Math.sin(Date.now() * 0.001) + 0.3})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(fromNode.x, fromNode.y);
+          ctx.lineTo(toNode.x, toNode.y);
+          ctx.stroke();
+        });
+
+        // Update and draw nodes
+        nodes.forEach(node => {
+          // Update position
+          node.x += node.vx;
+          node.y += node.vy;
+          node.pulse += 0.05;
+          
+          // Bounce off walls
+          if (node.x <= 6 || node.x >= canvas.width - 6) node.vx *= -1;
+          if (node.y <= 6 || node.y >= canvas.height - 6) node.vy *= -1;
+          
+          // Draw node
+          const pulseSize = 3 + Math.sin(node.pulse) * 2;
+          ctx.fillStyle = `rgba(124, 92, 255, ${0.8 + Math.sin(node.pulse) * 0.2})`;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, pulseSize, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        
+        animationFrame = requestAnimationFrame(animate);
+      };
+
+      animate();
+
+      return () => {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+        }
+      };
+    }
+  }, []);
+
+  // Initialize app
+  useEffect(() => {
+    setTimeout(() => {
+      setLoading(false);
+      setAiMessages([{
+        type: 'ai',
+        message: "Hi Steve! I've analyzed your 247 transactions from Chase and Bank of America. Based on your spending patterns, you typically spend $89 on groceries every Tuesday. Want to see your personalized cash flow prediction?",
+        timestamp: new Date()
+      }]);
+    }, 2000);
+  }, []);
+
+  // AI Response Generator
+  const generateAIResponse = (message) => {
+    const msg = message.toLowerCase();
+    
+    const responses = {
+      cashflow: [
+        "Based on 6 months of transaction data, I predict your next expenses: Groceries in 2 days ($85-95), Rent in 12 days ($1,850), Gas in 4 days ($45-55). Your cash flow prediction shows +$1,247 by month-end with 94.3% confidence.",
+        "My neural network analyzed your bi-weekly payroll pattern ($3,247.85) and spending trends. Next month prediction: Income $6,495, Expenses $5,248, Net positive $1,247. Confidence: 94.3%"
+      ],
+      patterns: [
+        "Fascinating patterns in your data! You spend 34% more on weekends vs weekdays. Your Starbucks visits peak on Monday/Wednesday. Grocery shopping on Tuesdays saves you $67/month. Your income timing is perfectly consistent every 2 weeks.",
+        "Your spending personality: Disciplined grocery shopper (Tuesdays), consistent coffee routine (18 Starbucks visits/month), weekend social spender (+34%), and excellent bill management (never late). Financial health score: 8.7/10!"
+      ],
+      savings: [
+        "I've analyzed your spending patterns and found 3 immediate opportunities: 1) Coffee optimization saves $47/month (you visit Starbucks 18 times/month), 2) Weekend spending is 34% higher - setting limits saves $108/month, 3) You have 3 unused subscriptions worth $23/month. Total potential: $178/month!",
+        "Your Tuesday grocery shopping is brilliant! Whole Foods prices are 15% lower on Tuesdays. You're already saving $67/month with this pattern. Want me to find more optimization opportunities?"
+      ],
+      default: [
+        "I'm here with insights from your 247 real transactions! Your financial health score is 8.7/10. Ask me about budget optimization, spending patterns, or savings opportunities.",
+        "With your Chase and Bank of America data, I can provide detailed analysis on any aspect. Your bi-weekly income pattern and Tuesday grocery shopping show excellent financial discipline!"
+      ]
+    };
+
+    if (msg.includes('cash') || msg.includes('flow') || msg.includes('predict')) {
+      return responses.cashflow[Math.floor(Math.random() * responses.cashflow.length)];
+    }
+    if (msg.includes('pattern') || msg.includes('behavior') || msg.includes('spend')) {
+      return responses.patterns[Math.floor(Math.random() * responses.patterns.length)];
+    }
+    if (msg.includes('save') || msg.includes('optimize') || msg.includes('money')) {
+      return responses.savings[Math.floor(Math.random() * responses.savings.length)];
+    }
+    
+    return responses.default[Math.floor(Math.random() * responses.default.length)];
+  };
+
+  // AI Chat Handler
   const handleAIMessage = () => {
     if (!aiChatInput.trim()) return;
     
@@ -166,7 +255,7 @@ const PhenomenalFamilyTracker = () => {
     setTimeout(() => {
       const response = generateAIResponse(aiChatInput);
       setAiMessages(prev => [...prev, {
-        type: 'ai', 
+        type: 'ai',
         message: response,
         timestamp: new Date()
       }]);
@@ -175,187 +264,141 @@ const PhenomenalFamilyTracker = () => {
     setAiChatInput('');
   };
 
-  const generateAIResponse = (message) => {
-    const msg = message.toLowerCase();
-    
-    if (msg.includes('cash flow') || msg.includes('payday')) {
-      return aiResponses.cashflow[Math.floor(Math.random() * aiResponses.cashflow.length)];
-    }
-    
-    if (msg.includes('family') || msg.includes('wife') || msg.includes('sarah')) {
-      return aiResponses.family[Math.floor(Math.random() * aiResponses.family.length)];
-    }
-    
-    if (msg.includes('save') || msg.includes('optimize')) {
-      return aiResponses.optimization[Math.floor(Math.random() * aiResponses.optimization.length)];
-    }
-    
-    return "I'm analyzing your family's financial data with 247 transactions across 4 accounts. Your dual-income pattern with staggered paydays creates excellent cash flow stability. What specific aspect would you like me to analyze?";
-  };
-
   // Export Functions
   const exportData = (type) => {
     const timestamp = new Date().toISOString().split('T')[0];
     
     switch(type) {
-      case 'cashflow':
-        exportCashFlowData(timestamp);
+      case 'transactions-csv':
+        exportTransactionsCSV(timestamp);
         break;
-      case 'transactions':
-        exportTransactionsData(timestamp);
+      case 'budget-excel':
+        exportBudgetExcel(timestamp);
         break;
-      case 'family-budget':
-        exportFamilyBudget(timestamp);
+      case 'cashflow-excel':
+        exportCashFlowExcel(timestamp);
         break;
-      case 'ai-report':
+      case 'ai-report-pdf':
         exportAIReport(timestamp);
+        break;
+      case 'tax-summary':
+        exportTaxSummary(timestamp);
         break;
     }
     
     setShowExportModal(false);
   };
 
-  const exportCashFlowData = (timestamp) => {
+  const exportTransactionsCSV = (timestamp) => {
     const csvContent = [
-      ['Phenomenal Family Financial Tracker - Cash Flow Analysis'],
-      ['Generated:', new Date().toLocaleString()],
-      [''],
-      ['FAMILY MEMBERS'],
-      ['Name', 'Next Payday', 'Pay Amount', 'Days Until Payday'],
-      ['Steve Colburn', '2025-08-29', '$3,247.85', nextPaydays.steve.days],
-      ['Sarah Colburn', '2025-08-25', '$2,890.50', nextPaydays.sarah.days],
-      [''],
-      ['ACCOUNT BALANCES'],
-      ['Account', 'Owner', 'Balance', 'Type'],
-      ...familyData.accounts.map(acc => [
-        acc.name, 
-        acc.owner === 'steve' ? 'Steve' : 'Sarah',
-        formatCurrency(acc.balance),
-        acc.type
-      ]),
-      [''],
-      ['RUNNING BALANCE TO NEXT PAYDAYS'],
-      ['Date', 'Description', 'Amount', 'Owner', 'Running Balance'],
-      ['8/17/2025', 'Current Family Total', formatCurrency(totalBalance), 'Combined', formatCurrency(totalBalance)],
-      ...familyData.predictedTransactions.map((tx, i) => [
-        tx.date,
-        tx.description,
-        tx.amount > 0 ? `+${formatCurrency(tx.amount)}` : formatCurrency(tx.amount),
-        tx.owner === 'steve' ? 'Steve' : 'Sarah',
-        formatCurrency(totalBalance + (i + 1) * 100) // Simplified calculation for demo
-      ])
-    ];
-    
-    downloadCSV(csvContent, `family-cashflow-${timestamp}.csv`);
-  };
-
-  const exportTransactionsData = (timestamp) => {
-    const csvContent = [
-      ['Date', 'Merchant', 'Amount', 'Category', 'Owner', 'Account', 'AI_Confidence'],
-      ...familyData.transactions.map(tx => [
+      ['Date', 'Merchant', 'Amount', 'Category', 'Account', 'AI_Confidence'],
+      ...appData.transactions.map(tx => [
         tx.date,
         tx.merchant,
         tx.amount,
         tx.category,
-        tx.owner === 'steve' ? 'Steve' : 'Sarah',
-        familyData.accounts.find(acc => acc.id === tx.accountId)?.name || '',
-        `${tx.aiConfidence}%`
+        tx.account,
+        `${tx.confidence}%`
       ])
     ];
-    
-    downloadCSV(csvContent, `family-transactions-${timestamp}.csv`);
+    downloadCSV(csvContent, `phenomenal-transactions-${timestamp}.csv`);
   };
 
-  const exportFamilyBudget = (timestamp) => {
+  const exportCashFlowExcel = (timestamp) => {
     const csvContent = [
-      ['Phenomenal Family Budget Analysis'],
-      ['Month:', 'August 2025'],
+      ['Phenomenal Financial Tracker - Cash Flow Analysis'],
+      ['Generated:', new Date().toLocaleString()],
       [''],
-      ['INCOME'],
-      ['Source', 'Amount', 'Frequency'],
-      ['Steve Payroll', '$3,247.85', 'Bi-weekly'],
-      ['Sarah Payroll', '$2,890.50', 'Bi-weekly'],
-      ['Total Monthly', formatCurrency(monthlyIncome), ''],
-      [''],
-      ['EXPENSES'],
-      ['Category', 'Budgeted', 'Actual', 'Difference'],
-      ['Housing', '$1,850', '$1,850', '$0'],
-      ['Groceries', '$500', '$246', '-$254'],
-      ['Transportation', '$400', '$351', '-$49'],
-      ['Food & Dining', '$300', '$178', '-$122'],
-      ['Entertainment', '$150', '$16', '-$134'],
+      ['DATE', 'DESCRIPTION', 'AMOUNT', 'BALANCE'],
+      ['8/17/2025', 'Current Total Balance', formatCurrency(appData.totals.netWorth), formatCurrency(appData.totals.netWorth)],
+      ...appData.predictions.map((pred, i) => [
+        pred.date.split('-').slice(1).join('/') + '/25',
+        pred.description,
+        pred.amount > 0 ? `+${formatCurrency(pred.amount)}` : `-${formatCurrency(Math.abs(pred.amount))}`,
+        formatCurrency(appData.totals.netWorth + (i + 1) * 100)
+      ]),
       [''],
       ['SUMMARY'],
-      ['Total Income', formatCurrency(monthlyIncome)],
-      ['Total Expenses', formatCurrency(monthlySpending)],
-      ['Net Savings', formatCurrency(monthlyIncome - monthlySpending)],
-      ['Savings Rate', `${((monthlyIncome - monthlySpending) / monthlyIncome * 100).toFixed(1)}%`]
+      ['Current Balance', formatCurrency(appData.totals.netWorth)],
+      ['Predicted Cash Flow', formatCurrency(appData.totals.predictedCashFlow)],
+      ['AI Confidence', `${appData.totals.confidenceScore}%`]
     ];
-    
-    downloadCSV(csvContent, `family-budget-${timestamp}.csv`);
+    downloadCSV(csvContent, `phenomenal-cashflow-${timestamp}.csv`);
+  };
+
+  const exportBudgetExcel = (timestamp) => {
+    const csvContent = [
+      ['Category', 'Budgeted', 'Actual', 'Difference', 'AI_Insight'],
+      ...appData.categories.map(cat => [
+        cat.name,
+        formatCurrency(cat.budget),
+        formatCurrency(cat.amount),
+        formatCurrency(cat.amount - cat.budget),
+        cat.status === 'over' ? 'Reduce spending' : cat.status === 'under' ? 'Room for more' : 'On target'
+      ])
+    ];
+    downloadCSV(csvContent, `phenomenal-budget-${timestamp}.csv`);
   };
 
   const exportAIReport = (timestamp) => {
-    const reportContent = `
-PHENOMENAL FAMILY FINANCIAL TRACKER - AI ANALYSIS REPORT
+    const report = `
+PHENOMENAL FINANCIAL TRACKER - AI ANALYSIS REPORT
 Generated: ${new Date().toLocaleString()}
 
-FAMILY OVERVIEW:
-• Steve Colburn - Next payday: Aug 29 ($3,247.85)
-• Sarah Colburn - Next payday: Aug 25 ($2,890.50)
-• Combined monthly income: ${formatCurrency(monthlyIncome)}
-• Total family net worth: ${formatCurrency(totalBalance)}
+FINANCIAL HEALTH SCORE: ${appData.totals.aiHealthScore}/10 (Excellent)
 
-FINANCIAL HEALTH SCORE: 9.2/10 (Excellent)
+AI ANALYSIS:
+• ${appData.totals.totalTransactions} transactions analyzed with ${appData.ai.accuracyScore}% accuracy
+• ${appData.ai.patternsLearned} patterns learned across ${appData.ai.modelsActive} AI models
+• ${appData.ai.dataPoints} data points processed
 
-KEY AI INSIGHTS:
-• Dual-income timing is perfectly staggered (4-day offset)
-• Steve's Tuesday grocery pattern saves $67/month
-• Sarah's savings discipline: +$500/month transfers
-• Coffee optimization opportunity: Save $118/month
-• Emergency fund: 89% complete ($${(totalBalance * 0.6).toFixed(0)})
+CASH FLOW PREDICTION:
+• Next 30 days: ${formatCurrency(appData.totals.predictedCashFlow)} positive
+• Confidence score: ${appData.totals.confidenceScore}%
 
-CASH FLOW ANALYSIS:
-• Days until Steve's payday: ${nextPaydays.steve.days}
-• Days until Sarah's payday: ${nextPaydays.sarah.days}
-• Combined spending capacity: $${(totalBalance / 30).toFixed(0)}/day
-• Predicted month-end balance: ${formatCurrency(totalBalance + 2000)}
+SPENDING OPTIMIZATION:
+• Coffee optimization: Save $47/month
+• Tuesday grocery shopping: Already saving $67/month
+• Weekend spending 34% higher than weekdays
 
 RECOMMENDATIONS:
-1. Consolidate to 2 high-yield savings accounts
-2. Coordinate grocery shopping (both use Steve's Tuesday routine)
-3. Set up automatic bill pay to leverage Sarah's early payday
-4. Consider joint coffee budget of $50/month (currently $158)
-5. Increase emergency fund auto-transfer by $200/month
+1. Reduce Starbucks visits from 18 to 12/month
+2. Continue Tuesday grocery shopping
+3. Cancel unused subscriptions (Adobe Creative)
+4. Set weekend spending limit
 
-SPENDING PATTERNS:
-• Steve: Higher food/dining, consistent income timing
-• Sarah: More shopping/household, excellent savings rate
-• Combined: 27% savings rate (target achieved!)
-
-This AI analysis is based on ${familyData.transactions.length} transactions with 96.7% accuracy.
-Family financial health rank: Top 8% of households.
+Total optimization potential: $178/month
     `;
     
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `family-ai-report-${timestamp}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadTextFile(report, `phenomenal-ai-report-${timestamp}.txt`);
+  };
+
+  const exportTaxSummary = (timestamp) => {
+    const csvContent = [
+      ['Category', 'Amount', 'Tax_Deductible', 'Notes'],
+      ['Income', formatCurrency(6495.70), 'No', 'Bi-weekly salary'],
+      ['Business Software', formatCurrency(52.99), 'Maybe', 'Adobe Creative Suite'],
+      ['Medical Expenses', formatCurrency(58.45), 'Yes', 'Healthcare costs'],
+      ['Home Office', formatCurrency(89.99), 'Partial', 'Internet if working from home']
+    ];
+    downloadCSV(csvContent, `phenomenal-tax-summary-${timestamp}.csv`);
   };
 
   const downloadCSV = (data, filename) => {
     const csv = data.map(row => 
-      Array.isArray(row) ? row.map(cell => 
-        typeof cell === 'string' && cell.includes(',') ? `"${cell}"` : cell
-      ).join(',') : row
+      Array.isArray(row) ? row.join(',') : row
     ).join('\n');
     
     const blob = new Blob([csv], { type: 'text/csv' });
+    downloadBlob(blob, filename);
+  };
+
+  const downloadTextFile = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    downloadBlob(blob, filename);
+  };
+
+  const downloadBlob = (blob, filename) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -366,7 +409,41 @@ Family financial health rank: Top 8% of households.
     URL.revokeObjectURL(url);
   };
 
-  // Modal Functions
+  // Connection simulation
+  const simulateConnection = () => {
+    setIsConnecting(true);
+    setConnectionProgress(0);
+    setShowPlaidModal(true);
+    
+    const steps = [
+      { progress: 15, message: 'Initializing secure connection...', delay: 800 },
+      { progress: 35, message: 'Authenticating with bank...', delay: 1200 },
+      { progress: 55, message: 'Retrieving account information...', delay: 1000 },
+      { progress: 75, message: 'Importing transactions...', delay: 1500 },
+      { progress: 90, message: 'AI analyzing patterns...', delay: 800 },
+      { progress: 100, message: 'Connection complete!', delay: 500 }
+    ];
+    
+    let currentStep = 0;
+    
+    const processStep = () => {
+      if (currentStep < steps.length) {
+        setConnectionProgress(steps[currentStep].progress);
+        currentStep++;
+        setTimeout(processStep, steps[currentStep - 1]?.delay || 500);
+      } else {
+        setTimeout(() => {
+          setIsConnecting(false);
+          setShowPlaidModal(false);
+          alert('✅ Demo bank connection successful!');
+        }, 1000);
+      }
+    };
+    
+    processStep();
+  };
+
+  // Modal handlers
   const showModal = (title, content) => {
     setModalContent({ title, content });
     setShowDetailsModal(true);
@@ -374,409 +451,1323 @@ Family financial health rank: Top 8% of households.
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-20 h-20 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-2xl font-bold text-white mb-2">Loading Phenomenal Family Tracker</h2>
-          <p className="text-purple-300">Analyzing family financial data across 4 accounts...</p>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%)',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '80px',
+            height: '80px',
+            border: '4px solid rgba(124, 92, 255, 0.3)',
+            borderTop: '4px solid #7c5cff',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <h2 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '12px' }}>
+            Loading Phenomenal Financial Tracker
+          </h2>
+          <p style={{ color: '#9aa3b2' }}>
+            AI System Initializing • Neural Networks Loading • {appData.totals.totalTransactions} Transactions
+          </p>
         </div>
+        
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `
+        }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-      {/* Header */}
-      <header className="backdrop-blur-lg bg-black/20 border-b border-purple-500/20 p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-2xl">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%)',
+      color: '#e7ecf3',
+      position: 'relative'
+    }}>
+      {/* Animated Background */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `
+          radial-gradient(circle at 20% 80%, rgba(120,119,198,0.1) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(255,107,157,0.08) 0%, transparent 50%),
+          radial-gradient(circle at 40% 40%, rgba(78,205,196,0.06) 0%, transparent 50%)
+        `,
+        pointerEvents: 'none'
+      }} />
+
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px', position: 'relative', zIndex: 1 }}>
+        
+        {/* Header */}
+        <header style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '32px',
+          padding: '20px 0',
+          backdropFilter: 'blur(20px)',
+          background: 'rgba(15, 17, 22, 0.8)',
+          borderRadius: '0 0 24px 24px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #ff6b9d 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '28px',
+              boxShadow: '0 0 20px rgba(255, 107, 157, 0.3)'
+            }}>
               🧠
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Phenomenal Family Financial Tracker
+              <h1 style={{
+                margin: 0,
+                fontSize: '28px',
+                fontWeight: '800',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #ff6b9d 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                Phenomenal Financial Tracker
               </h1>
-              <p className="text-purple-300 text-sm">AI-Powered • Dual-Income Intelligence • Live Predictions</p>
+              <div style={{ color: '#9aa3b2', fontSize: '14px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  background: 'rgba(255, 107, 157, 0.1)',
+                  border: '1px solid rgba(255, 107, 157, 0.3)',
+                  color: '#ff6b9d'
+                }}>
+                  AI System Active
+                </span>
+                • AI-Powered • Plaid Connected • Predictive Intelligence
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-green-500/20 border border-green-500/30 rounded-full px-3 py-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-green-400 text-sm">4 Accounts Connected</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              background: 'rgba(23, 201, 100, 0.1)',
+              border: '1px solid rgba(23, 201, 100, 0.3)',
+              borderRadius: '20px',
+              fontSize: '12px'
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#17c964',
+                animation: 'pulse 2s infinite'
+              }} />
+              {appData.totals.connectedBanks} Banks Connected
             </div>
             
             <button 
               onClick={() => setShowAIAssistant(true)}
-              className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors"
+              style={{
+                background: 'linear-gradient(135deg, #ff6b9d 0%, #e84393 100%)',
+                border: '1px solid #ff6b9d',
+                color: '#fff',
+                padding: '12px 16px',
+                borderRadius: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 0 20px rgba(255, 107, 157, 0.3)'
+              }}
             >
               🧠 AI Assistant
             </button>
             
             <button 
+              onClick={simulateConnection}
+              style={{
+                background: 'linear-gradient(135deg, #00d4ff 0%, #0099cc 100%)',
+                border: '1px solid #00d4ff',
+                color: '#fff',
+                padding: '12px 16px',
+                borderRadius: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 8px 32px rgba(0, 212, 255, 0.3)'
+              }}
+            >
+              🔗 Connect Bank
+            </button>
+            
+            <button 
               onClick={() => setShowExportModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
+              style={{
+                background: 'linear-gradient(135deg, #4ecdc4 0%, #00b894 100%)',
+                border: '1px solid #4ecdc4',
+                color: '#fff',
+                padding: '12px 16px',
+                borderRadius: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(78, 205, 196, 0.4)'
+              }}
             >
               📊 Export Data
             </button>
             
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center text-sm font-bold">
-                S
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '8px 16px',
+              background: 'rgba(20, 22, 27, 0.8)',
+              borderRadius: '20px',
+              backdropFilter: 'blur(20px)'
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '700',
+                color: '#fff'
+              }}>
+                {appData.user.avatar}
               </div>
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center text-sm font-bold">
-                S
+              <span>{appData.user.name}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* AI-Enhanced Dashboard Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '20px',
+          marginBottom: '32px'
+        }}>
+          {/* Enhanced Demo Tiles */}
+          <div 
+            onClick={() => showModal('💎 Total Balance Breakdown', `
+              <div style="display: grid; gap: 16px; margin: 20px 0;">
+                ${appData.accounts.map(acc => `
+                  <div style="display: flex; justify-content: space-between; padding: 12px; background: rgba(23,201,100,0.1); border-radius: 12px;">
+                    <span>${acc.name}</span>
+                    <span style="font-weight: 700; color: #17c964;">${formatCurrency(acc.balance)}</span>
+                  </div>
+                `).join('')}
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 12px 0;"></div>
+                <div style="display: flex; justify-content: space-between; padding: 12px; background: rgba(255,107,157,0.1); border-radius: 12px;">
+                  <span style="font-size: 18px; font-weight: 700;">Total Net Worth</span>
+                  <span style="font-size: 18px; font-weight: 700; color: #ff6b9d;">${formatCurrency(appData.totals.netWorth)}</span>
+                </div>
               </div>
-              <span className="text-purple-300">Steve & Sarah</span>
+            `)}
+            style={{
+              padding: '24px',
+              background: 'rgba(20, 22, 27, 0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '24px',
+              position: 'relative',
+              overflow: 'hidden',
+              transition: 'all 0.4s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #7c5cff, #00d7c0, #ff6b9d, #4ecdc4)'
+            }} />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px'
+            }}>
+              <div style={{ color: '#9aa3b2', fontSize: '14px', fontWeight: '600' }}>Total Balance</div>
+              <div style={{ fontSize: '20px' }}>💎</div>
+            </div>
+            <div style={{
+              fontSize: '32px',
+              fontWeight: '800',
+              margin: '8px 0',
+              background: 'linear-gradient(135deg, #e7ecf3 0%, #7c5cff 50%, #ff6b9d 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              {formatCurrency(appData.totals.netWorth)}
+            </div>
+            <div style={{
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '700',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(23,201,100,.1)',
+              color: '#17c964',
+              border: '1px solid rgba(23,201,100,.3)'
+            }}>
+              <div style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#17c964',
+                animation: 'pulse 2s infinite'
+              }} />
+              +$2,340 this month
+            </div>
+          </div>
+
+          <div 
+            onClick={() => showModal('📊 Monthly Spending Analysis', `
+              <div style="margin: 20px 0;">
+                <h4 style="color: #ff6b9d; margin: 0 0 12px 0;">🧠 AI Spending Breakdown</h4>
+                ${appData.categories.map(cat => `
+                  <div style="display: flex; justify-content: space-between; padding: 8px; background: rgba(255,107,157,0.05); border-radius: 8px; margin-bottom: 4px;">
+                    <span>${cat.name}</span>
+                    <span style="font-weight: 700;">${formatCurrency(cat.amount)} (${cat.percentage}%)</span>
+                  </div>
+                `).join('')}
+                <div style="margin-top: 12px; padding: 12px; background: rgba(255,183,3,0.1); border-radius: 12px; border: 1px solid rgba(255,183,3,0.3);">
+                  <strong style="color: #ffb703;">⚠️ Budget Alert:</strong> Food & Dining category is 23% over budget. Consider reducing coffee visits.
+                </div>
+              </div>
+            `)}
+            style={{
+              padding: '24px',
+              background: 'rgba(20, 22, 27, 0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '24px',
+              position: 'relative',
+              overflow: 'hidden',
+              transition: 'all 0.4s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #7c5cff, #00d7c0, #ff6b9d, #4ecdc4)'
+            }} />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px'
+            }}>
+              <div style={{ color: '#9aa3b2', fontSize: '14px', fontWeight: '600' }}>Monthly Spending</div>
+              <div style={{ fontSize: '20px' }}>📊</div>
+            </div>
+            <div style={{
+              fontSize: '32px',
+              fontWeight: '800',
+              margin: '8px 0',
+              background: 'linear-gradient(135deg, #e7ecf3 0%, #7c5cff 50%, #ff6b9d 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              {formatCurrency(Math.abs(appData.totals.monthlySpending))}
+            </div>
+            <div style={{
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '700',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(255,183,3,.1)',
+              color: '#ffb703',
+              border: '1px solid rgba(255,183,3,.3)'
+            }}>
+              15% above target
+            </div>
+          </div>
+
+          <div 
+            onClick={() => showModal('🎯 AI Cash Flow Prediction', `
+              <div style="margin: 20px 0;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <div style="font-size: 32px; font-weight: 800; color: #ff6b9d;">+${formatCurrency(appData.totals.predictedCashFlow)}</div>
+                  <div style="color: #4ecdc4;">Predicted Available Cash (30 days)</div>
+                </div>
+                <h4 style="color: #ff6b9d; margin: 16px 0 8px 0;">🧠 Prediction Breakdown:</h4>
+                <div style="margin-bottom: 16px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px; background: rgba(23,201,100,0.1); border-radius: 8px; margin-bottom: 4px;">
+                    <span>💰 Expected Income (2 paychecks)</span>
+                    <span style="color: #17c964; font-weight: 700;">+$6,495.70</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px; background: rgba(255,84,112,0.1); border-radius: 8px;">
+                    <span>💸 Predicted Expenses</span>
+                    <span style="color: #ff5470; font-weight: 700;">-$5,247.87</span>
+                  </div>
+                </div>
+                <div style="padding: 12px; background: rgba(78,205,196,0.1); border-radius: 12px;">
+                  <strong style="color: #4ecdc4;">🔮 AI Confidence: ${appData.totals.confidenceScore}%</strong>
+                </div>
+              </div>
+            `)}
+            style={{
+              padding: '24px',
+              background: 'rgba(20, 22, 27, 0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 107, 157, 0.2)',
+              borderRadius: '24px',
+              position: 'relative',
+              overflow: 'hidden',
+              transition: 'all 0.4s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 107, 157, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #7c5cff, #00d7c0, #ff6b9d, #4ecdc4)'
+            }} />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px'
+            }}>
+              <div style={{ color: '#9aa3b2', fontSize: '14px', fontWeight: '600' }}>AI Cash Flow</div>
+              <div style={{ fontSize: '20px' }}>🎯</div>
+            </div>
+            <div style={{
+              fontSize: '32px',
+              fontWeight: '800',
+              margin: '8px 0',
+              background: 'linear-gradient(135deg, #e7ecf3 0%, #7c5cff 50%, #ff6b9d 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              +{formatCurrency(appData.totals.predictedCashFlow)}
+            </div>
+            <div style={{
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '700',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(255,107,157,.1)',
+              color: '#ff6b9d',
+              border: '1px solid rgba(255,107,157,.3)'
+            }}>
+              <div style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#ff6b9d',
+                animation: 'pulse 2s infinite'
+              }} />
+              {appData.totals.confidenceScore}% confidence
+            </div>
+          </div>
+
+          <div 
+            onClick={() => showModal('🧠 AI Financial Health Score', `
+              <div style="margin: 20px 0;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <div style="font-size: 48px; font-weight: 800; color: #17c964;">${appData.totals.aiHealthScore}/10</div>
+                  <div style="color: #17c964; font-size: 18px; font-weight: 700;">Excellent Financial Health</div>
+                </div>
+                <div style="display: grid; gap: 8px; margin-bottom: 16px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px; background: rgba(23,201,100,0.1); border-radius: 8px;">
+                    <span>💰 Savings Rate</span>
+                    <span style="color: #17c964; font-weight: 700;">18.4%</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px; background: rgba(23,201,100,0.1); border-radius: 8px;">
+                    <span>💳 Debt Management</span>
+                    <span style="color: #17c964; font-weight: 700;">8.2%</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px; background: rgba(255,183,3,0.1); border-radius: 8px;">
+                    <span>🎯 Budget Variance</span>
+                    <span style="color: #ffb703; font-weight: 700;">3.1%</span>
+                  </div>
+                </div>
+                <div style="padding: 12px; background: rgba(23,201,100,0.1); border-radius: 12px;">
+                  <strong style="color: #17c964;">🎯 You're in the top 15% of financial health!</strong>
+                </div>
+              </div>
+            `)}
+            style={{
+              padding: '24px',
+              background: 'rgba(20, 22, 27, 0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '24px',
+              position: 'relative',
+              overflow: 'hidden',
+              transition: 'all 0.4s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #7c5cff, #00d7c0, #ff6b9d, #4ecdc4)'
+            }} />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px'
+            }}>
+              <div style={{ color: '#9aa3b2', fontSize: '14px', fontWeight: '600' }}>AI Health Score</div>
+              <div style={{ fontSize: '20px' }}>🧠</div>
+            </div>
+            <div style={{
+              fontSize: '32px',
+              fontWeight: '800',
+              margin: '8px 0',
+              background: 'linear-gradient(135deg, #e7ecf3 0%, #7c5cff 50%, #ff6b9d 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              {appData.totals.aiHealthScore}/10
+            </div>
+            <div style={{
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '700',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(23,201,100,.1)',
+              color: '#17c964',
+              border: '1px solid rgba(23,201,100,.3)'
+            }}>
+              Excellent
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto p-6">
-        {/* AI Enhanced Dashboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div 
-            onClick={() => showModal('Family Net Worth', `
-              <div className="space-y-4">
-                <div className="text-center p-6 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-xl">
-                  <div className="text-4xl font-bold text-green-400">${formatCurrency(totalBalance)}</div>
-                  <div className="text-purple-300">Combined Family Wealth</div>
+        {/* AI Predictions & Insights */}
+        <div style={{
+          background: 'rgba(20, 22, 27, 0.8)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 107, 157, 0.2)',
+          borderRadius: '24px',
+          padding: '24px',
+          marginBottom: '32px'
+        }}>
+          <h2 style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            margin: '0 0 16px 0',
+            fontWeight: '800'
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #ff6b9d, #4ecdc4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px',
+              boxShadow: '0 0 20px rgba(255, 107, 157, 0.3)'
+            }}>
+              🔮
+            </div>
+            AI Financial Predictions
+            <div style={{ marginLeft: 'auto', fontSize: '14px' }}>
+              <div style={{
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '10px',
+                fontWeight: '700',
+                background: 'rgba(255,107,157,0.1)',
+                color: '#ff6b9d',
+                border: '1px solid rgba(255,107,157,0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <div style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#ff6b9d',
+                  animation: 'pulse 2s infinite'
+                }} />
+                Expert Level
+              </div>
+            </div>
+          </h2>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '16px',
+            margin: '20px 0'
+          }}>
+            {appData.insights.map((insight, index) => (
+              <div
+                key={index}
+                onClick={() => showModal(`📊 ${insight.title}`, `
+                  <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">${
+                      insight.type === 'data' ? '📊' :
+                      insight.type === 'optimization' ? '💡' :
+                      insight.type === 'pattern' ? '🔍' : '⚠️'
+                    }</div>
+                    <div style="font-size: 24px; font-weight: 800; color: #ff6b9d; margin-bottom: 8px;">${insight.value}</div>
+                    <div style="color: #9aa3b2;">${insight.title}</div>
+                  </div>
+                `)}
+                style={{
+                  padding: '16px',
+                  background: 'rgba(255,107,157,0.05)',
+                  border: '1px solid rgba(255,107,157,0.2)',
+                  borderRadius: '12px',
+                  textAlign: 'center',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,107,157,0.1)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,107,157,0.05)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div style={{ fontSize: '24px', fontWeight: '800', color: '#ff6b9d', margin: '8px 0' }}>
+                  {insight.value}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  ${familyData.accounts.map(acc => `
-                    <div className="p-4 bg-white/5 rounded-lg">
-                      <div className="font-semibold">${acc.name}</div>
-                      <div className="text-2xl font-bold text-blue-400">${formatCurrency(acc.balance)}</div>
-                      <div className="text-sm text-purple-300">${acc.owner === 'steve' ? 'Steve' : 'Sarah'}</div>
-                    </div>
-                  `).join('')}
+                <div style={{ fontSize: '12px', color: '#9aa3b2' }}>
+                  {insight.title}
                 </div>
               </div>
-            `)}
-            className="bg-white/10 backdrop-blur-lg border border-purple-500/20 rounded-xl p-6 cursor-pointer hover:bg-white/15 transition-all hover:scale-105"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-purple-300">Family Net Worth</span>
-              <span className="text-2xl">💎</span>
-            </div>
-            <div className="text-3xl font-bold text-green-400 mb-2">{formatCurrency(totalBalance)}</div>
-            <div className="text-sm text-green-400">+$2,847 this month</div>
+            ))}
           </div>
-          
-          <div 
-            onClick={() => showModal('Monthly Income', `
-              <div className="space-y-4">
-                <div className="text-center p-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl">
-                  <div className="text-4xl font-bold text-purple-400">${formatCurrency(monthlyIncome)}</div>
-                  <div className="text-purple-300">Combined Monthly Income</div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between p-3 bg-white/5 rounded-lg">
-                    <span>Steve (Bi-weekly)</span>
-                    <span className="font-bold">${formatCurrency(familyData.members[0].payAmount * 2)}</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-white/5 rounded-lg">
-                    <span>Sarah (Bi-weekly)</span>
-                    <span className="font-bold">${formatCurrency(familyData.members[1].payAmount * 2)}</span>
-                  </div>
-                </div>
-              </div>
-            `)}
-            className="bg-white/10 backdrop-blur-lg border border-purple-500/20 rounded-xl p-6 cursor-pointer hover:bg-white/15 transition-all hover:scale-105"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-purple-300">Monthly Income</span>
-              <span className="text-2xl">💰</span>
+
+          <div style={{
+            background: 'rgba(255,107,157,0.05)',
+            border: '1px solid rgba(255,107,157,0.2)',
+            borderRadius: '16px',
+            padding: '20px',
+            marginTop: '20px'
+          }}>
+            <h4 style={{ margin: '0 0 12px 0', color: '#ff6b9d', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              💡 Cash Flow Prediction (Next 30 Days)
+            </h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '18px', fontWeight: '700' }}>
+                +{formatCurrency(appData.totals.predictedCashFlow)}
+              </span>
+              <span style={{ fontSize: '12px', color: '#9aa3b2' }}>
+                Confidence: {appData.totals.confidenceScore}%
+              </span>
             </div>
-            <div className="text-3xl font-bold text-purple-400 mb-2">{formatCurrency(monthlyIncome)}</div>
-            <div className="text-sm text-purple-400">Dual-income family</div>
-          </div>
-          
-          <div 
-            onClick={() => showModal('Next Paydays', `
-              <div className="space-y-4">
-                <div className="text-center p-6 bg-gradient-to-br from-blue-500/20 to-green-500/20 rounded-xl">
-                  <div className="text-2xl font-bold text-blue-400">Staggered Paydays</div>
-                  <div className="text-purple-300">Perfectly Timed Cash Flow</div>
-                </div>
-                <div className="space-y-3">
-                  <div className="p-4 bg-white/5 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-semibold">Sarah's Payday</div>
-                        <div className="text-sm text-purple-300">Aug 25, 2025</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-green-400">${formatCurrency(familyData.members[1].payAmount)}</div>
-                        <div className="text-sm text-green-400">${nextPaydays.sarah.days} days</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-semibold">Steve's Payday</div>
-                        <div className="text-sm text-purple-300">Aug 29, 2025</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-green-400">${formatCurrency(familyData.members[0].payAmount)}</div>
-                        <div className="text-sm text-green-400">${nextPaydays.steve.days} days</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `)}
-            className="bg-white/10 backdrop-blur-lg border border-purple-500/20 rounded-xl p-6 cursor-pointer hover:bg-white/15 transition-all hover:scale-105"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-purple-300">Next Paydays</span>
-              <span className="text-2xl">📅</span>
+            <div style={{
+              height: '6px',
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              marginBottom: '8px'
+            }}>
+              <div style={{
+                height: '100%',
+                background: 'linear-gradient(90deg, #ff6b9d, #4ecdc4)',
+                borderRadius: '10px',
+                width: `${appData.totals.confidenceScore}%`,
+                transition: 'width 1s ease'
+              }} />
             </div>
-            <div className="text-3xl font-bold text-blue-400 mb-2">{Math.min(nextPaydays.steve.days, nextPaydays.sarah.days)} days</div>
-            <div className="text-sm text-blue-400">Sarah: {nextPaydays.sarah.days}d, Steve: {nextPaydays.steve.days}d</div>
-          </div>
-          
-          <div 
-            onClick={() => showModal('AI Health Score', `
-              <div className="space-y-4">
-                <div className="text-center p-6 bg-gradient-to-br from-green-500/20 to-yellow-500/20 rounded-xl">
-                  <div className="text-4xl font-bold text-green-400">9.2/10</div>
-                  <div className="text-purple-300">Family Financial Health</div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between p-3 bg-white/5 rounded-lg">
-                    <span>Savings Rate</span>
-                    <span className="text-green-400 font-bold">27.2%</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-white/5 rounded-lg">
-                    <span>Budget Adherence</span>
-                    <span className="text-green-400 font-bold">94.1%</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-white/5 rounded-lg">
-                    <span>Cash Flow Stability</span>
-                    <span className="text-green-400 font-bold">9.8/10</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-white/5 rounded-lg">
-                    <span>Emergency Fund</span>
-                    <span className="text-yellow-400 font-bold">89%</span>
-                  </div>
-                </div>
-              </div>
-            `)}
-            className="bg-white/10 backdrop-blur-lg border border-purple-500/20 rounded-xl p-6 cursor-pointer hover:bg-white/15 transition-all hover:scale-105"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-purple-300">AI Health Score</span>
-              <span className="text-2xl">🎯</span>
+            <div style={{ fontSize: '12px', color: '#9aa3b2', lineHeight: '1.4' }}>
+              Based on your spending patterns: $89 groceries every Tuesday, rent in 12 days, and seasonal adjustment for August
             </div>
-            <div className="text-3xl font-bold text-green-400 mb-2">9.2/10</div>
-            <div className="text-sm text-green-400">Excellent</div>
           </div>
         </div>
 
-        {/* Cash Flow to Next Paydays - Google Sheets Style */}
-        <div className="bg-white/10 backdrop-blur-lg border border-purple-500/20 rounded-xl p-6 mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold flex items-center gap-3">
-              <span className="text-3xl">💰</span>
-              Family Cash Flow to Next Paydays
-            </h2>
-            <div className="flex gap-2">
-              <div className="bg-blue-600/20 border border-blue-500/30 rounded-lg px-3 py-1">
-                <span className="text-blue-400 text-sm">Sarah: {nextPaydays.sarah.days} days</span>
+        {/* Neural Network Visualization */}
+        <div style={{
+          background: 'rgba(20, 22, 27, 0.8)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 107, 157, 0.2)',
+          borderRadius: '24px',
+          padding: '24px',
+          marginBottom: '32px'
+        }}>
+          <h3 style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            margin: '0 0 16px 0',
+            fontWeight: '800'
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #ff6b9d, #4ecdc4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px',
+              boxShadow: '0 0 20px rgba(255, 107, 157, 0.3)'
+            }}>
+              🧬
+            </div>
+            AI Learning Network
+            <div style={{ marginLeft: 'auto' }}>
+              <div style={{
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '10px',
+                fontWeight: '700',
+                background: 'rgba(78,205,196,0.1)',
+                color: '#4ecdc4',
+                border: '1px solid rgba(78,205,196,0.3)'
+              }}>
+                Training Active
               </div>
-              <div className="bg-green-600/20 border border-green-500/30 rounded-lg px-3 py-1">
-                <span className="text-green-400 text-sm">Steve: {nextPaydays.steve.days} days</span>
+            </div>
+          </h3>
+          
+          <canvas 
+            ref={neuralCanvasRef}
+            style={{
+              width: '100%',
+              height: '200px',
+              background: 'rgba(0,0,0,0.2)',
+              borderRadius: '16px',
+              marginBottom: '16px'
+            }}
+          />
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '12px',
+            fontSize: '12px'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#4ecdc4' }}>
+                {appData.ai.patternsLearned}
               </div>
+              <div style={{ color: '#9aa3b2' }}>Patterns Learned</div>
             </div>
-          </div>
-
-          {/* Google Sheets Style Table */}
-          <div className="bg-black/20 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-5 gap-1 p-3 bg-purple-600/20 border-b border-purple-500/20 font-semibold text-sm">
-              <div>DATE</div>
-              <div>DESCRIPTION</div>
-              <div>AMOUNT</div>
-              <div>OWNER</div>
-              <div>FAMILY BALANCE</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#ff6b9d' }}>
+                {appData.ai.accuracyScore}%
+              </div>
+              <div style={{ color: '#9aa3b2' }}>Prediction Accuracy</div>
             </div>
-            
-            {/* Current Balance */}
-            <div className="grid grid-cols-5 gap-1 p-3 border-b border-purple-500/10 bg-blue-600/10">
-              <div className="text-purple-300">8/17/25</div>
-              <div className="font-semibold">💎 Current Family Total</div>
-              <div className="text-blue-400 font-bold">{formatCurrency(totalBalance)}</div>
-              <div className="text-purple-300">Combined</div>
-              <div className="text-blue-400 font-bold">{formatCurrency(totalBalance)}</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#17c964' }}>
+                {appData.ai.modelsActive}
+              </div>
+              <div style={{ color: '#9aa3b2' }}>AI Models Active</div>
             </div>
-
-            {/* Predicted Transactions */}
-            {familyData.predictedTransactions.map((tx, index) => {
-              const runningBalance = totalBalance + (index + 1) * (tx.amount > 0 ? tx.amount : tx.amount);
-              const isPayday = tx.description.includes('PAYDAY');
-              const isExpense = tx.amount < 0;
-              
-              return (
-                <div 
-                  key={index}
-                  className={`grid grid-cols-5 gap-1 p-3 border-b border-purple-500/10 ${
-                    isPayday ? 'bg-green-600/10' : isExpense ? 'bg-red-600/10' : 'bg-white/5'
-                  }`}
-                >
-                  <div className="text-purple-300">{new Date(tx.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}</div>
-                  <div className={`${isPayday ? 'font-bold text-green-400' : ''}`}>
-                    {isPayday && '💰 '}{tx.description}
-                  </div>
-                  <div className={`font-bold ${tx.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {tx.amount > 0 ? '+' : ''}{formatCurrency(tx.amount)}
-                  </div>
-                  <div className="text-purple-300">
-                    {tx.owner === 'steve' ? 'Steve' : 'Sarah'}
-                  </div>
-                  <div className={`font-bold ${runningBalance > totalBalance ? 'text-green-400' : 'text-blue-400'}`}>
-                    {formatCurrency(runningBalance)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Summary */}
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <div className="bg-purple-600/20 border border-purple-500/30 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-purple-400">{formatCurrency(totalBalance / 30)}</div>
-              <div className="text-purple-300 text-sm">Daily Spend Capacity</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#ffb703' }}>
+                {appData.ai.dataPoints}
+              </div>
+              <div style={{ color: '#9aa3b2' }}>Data Points Analyzed</div>
             </div>
-            <div className="bg-green-600/20 border border-green-500/30 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">{formatCurrency(6138.35)}</div>
-              <div className="text-green-300 text-sm">Combined Next Paydays</div>
-            </div>
-          </div>
-
-          <div className="mt-4 p-3 bg-purple-600/10 border border-purple-500/20 rounded-lg">
-            <span className="text-purple-400 font-semibold">🧠 AI Family Insight: </span>
-            <span className="text-purple-200">
-              Your staggered payday timing is perfect! Sarah's Aug 25 payday provides cash flow 4 days before Steve's Aug 29 payday. 
-              This creates natural financial stability with no cash crunches. Family spending capacity: {formatCurrency(totalBalance / 30)}/day until next paydays.
-            </span>
           </div>
         </div>
 
-        {/* Family Accounts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {familyData.accounts.map(account => (
-            <div 
-              key={account.id}
-              onClick={() => showModal(`${account.name} Details`, `
-                <div className="space-y-4">
-                  <div className="text-center p-6 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl">
-                    <div className="text-4xl font-bold text-blue-400">${formatCurrency(account.balance)}</div>
-                    <div className="text-purple-300">${account.name}</div>
-                    <div className="text-sm text-purple-400">${account.owner === 'steve' ? 'Steve Colburn' : 'Sarah Colburn'}</div>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-purple-300">Recent Transactions:</h4>
-                    ${familyData.transactions
-                      .filter(tx => tx.accountId === account.id)
-                      .slice(0, 5)
-                      .map(tx => `
-                        <div className="flex justify-between p-2 bg-white/5 rounded">
+        {/* Smart Account Management */}
+        <div style={{
+          background: 'rgba(20, 22, 27, 0.8)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '24px',
+          padding: '24px',
+          marginBottom: '32px'
+        }}>
+          <h2 style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            margin: '0 0 16px 0',
+            fontWeight: '800'
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px'
+            }}>
+              🏦
+            </div>
+            Smart Account Management
+            <div style={{ marginLeft: 'auto', fontSize: '14px' }}>
+              <div style={{
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '10px',
+                fontWeight: '700',
+                background: 'rgba(0,212,255,0.1)',
+                color: '#00d4ff',
+                border: '1px solid rgba(0,212,255,0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <div style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#00d4ff',
+                  animation: 'pulse 2s infinite'
+                }} />
+                Live Sync Active
+              </div>
+            </div>
+          </h2>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '20px'
+          }}>
+            {appData.accounts.map(account => (
+              <div
+                key={account.id}
+                onClick={() => showModal(`🏦 ${account.name}`, `
+                  <div style="margin: 20px 0;">
+                    <div style="text-center; padding: 20px; background: rgba(0,102,178,0.1); border-radius: 12px; margin-bottom: 16px;">
+                      <div style="font-size: 32px; font-weight: 800; color: #00d4ff;">${formatCurrency(account.balance)}</div>
+                      <div style="color: #9aa3b2;">${account.type} ${account.mask}</div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                      <h4 style="color: #ff6b9d; margin: 0 0 8px 0;">Recent Activity:</h4>
+                      ${appData.transactions.filter(tx => tx.account.includes(account.institution)).slice(0, 3).map(tx => `
+                        <div style="display: flex; justify-content: space-between; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 4px;">
                           <div>
-                            <div className="font-medium">${tx.merchant}</div>
-                            <div className="text-sm text-purple-300">${tx.date}</div>
+                            <div style="font-weight: 600;">${tx.merchant}</div>
+                            <div style="font-size: 12px; color: #9aa3b2;">${tx.date}</div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-bold ${tx.amount > 0 ? 'text-green-400' : 'text-red-400'}">
-                              ${tx.amount > 0 ? '+' : ''}${formatCurrency(Math.abs(tx.amount))}
-                            </div>
-                            <div className="text-sm text-purple-300">${tx.category}</div>
-                          </div>
+                          <div style="font-weight: 700; color: ${tx.amount > 0 ? '#17c964' : '#e7ecf3'};">${tx.amount > 0 ? '+' : ''}${formatCurrency(Math.abs(tx.amount))}</div>
                         </div>
                       `).join('')}
-                  </div>
-                </div>
-              `)}
-              className="bg-white/10 backdrop-blur-lg border border-purple-500/20 rounded-xl p-6 cursor-pointer hover:bg-white/15 transition-all hover:scale-105"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="font-bold text-lg">{account.name}</h3>
-                  <p className="text-purple-300 text-sm">{account.owner === 'steve' ? 'Steve' : 'Sarah'} • {account.type}</p>
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                  {account.type === 'checking' ? '🏦' : '💰'}
-                </div>
-              </div>
-              
-              <div className="text-3xl font-bold text-blue-400 mb-2">
-                {formatCurrency(account.balance)}
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-400 text-sm">Synced 2 min ago</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Recent Transactions */}
-        <div className="bg-white/10 backdrop-blur-lg border border-purple-500/20 rounded-xl p-6">
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-            <span className="text-3xl">⚡</span>
-            Recent Family Transactions
-          </h2>
-          
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {familyData.transactions.slice(0, 10).map(tx => (
-              <div 
-                key={tx.id}
-                onClick={() => showModal(`Transaction: ${tx.merchant}`, `
-                  <div className="space-y-4">
-                    <div className="text-center p-6 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-xl">
-                      <div className="text-4xl font-bold ${tx.amount > 0 ? 'text-green-400' : 'text-red-400'}">
-                        ${tx.amount > 0 ? '+' : ''}${formatCurrency(Math.abs(tx.amount))}
-                      </div>
-                      <div className="text-purple-300">${tx.merchant}</div>
-                      <div className="text-sm text-purple-400">${tx.date} • ${tx.owner === 'steve' ? 'Steve' : 'Sarah'}</div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-white/5 rounded-lg">
-                        <div className="text-sm text-purple-300">Category</div>
-                        <div className="font-semibold">${tx.category}</div>
-                      </div>
-                      <div className="p-3 bg-white/5 rounded-lg">
-                        <div className="text-sm text-purple-300">AI Confidence</div>
-                        <div className="font-semibold">${tx.aiConfidence}%</div>
-                      </div>
                     </div>
                   </div>
                 `)}
-                className="flex justify-between items-center p-4 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10 transition-colors"
+                style={{
+                  background: 'rgba(20, 22, 27, 0.8)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '20px',
+                  padding: '20px',
+                  transition: 'all 0.4s ease',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                    {tx.category === 'Income' ? '💰' : 
-                     tx.category === 'Groceries' ? '🥬' : 
-                     tx.category === 'Transportation' ? '🚗' : 
-                     tx.category === 'Food & Dining' ? '🍕' : '🛍️'}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  background: account.institution === 'Chase' ? 
+                    'linear-gradient(90deg, #0066b2, #0088cc)' : 
+                    'linear-gradient(90deg, #e31837, #ff4444)'
+                }} />
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: '800',
+                      fontSize: '16px',
+                      color: '#fff',
+                      background: account.institution === 'Chase' ? 
+                        'linear-gradient(135deg, #0066b2, #0088cc)' : 
+                        'linear-gradient(135deg, #e31837, #ff4444)'
+                    }}>
+                      {account.institution}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '700' }}>{account.name}</div>
+                      <div style={{ fontSize: '12px', color: '#9aa3b2' }}>
+                        {account.type} {account.mask}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    background: 'rgba(0,212,255,0.1)',
+                    color: '#00d4ff',
+                    border: '1px solid rgba(0,212,255,0.3)'
+                  }}>
+                    Plaid Connected
+                  </div>
+                </div>
+
+                <div style={{
+                  fontSize: '28px',
+                  fontWeight: '800',
+                  margin: '8px 0',
+                  background: 'linear-gradient(135deg, #e7ecf3, #7c5cff)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  {formatCurrency(account.balance)}
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '12px',
+                  color: '#9aa3b2'
+                }}>
+                  <span>Last sync: 2 min ago • Plaid</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: '#17c964',
+                      animation: 'pulse 2s infinite'
+                    }} />
+                    Live
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Cash Flow to Next Payday */}
+        <div style={{
+          background: 'rgba(20, 22, 27, 0.8)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '24px',
+          padding: '24px',
+          marginBottom: '32px'
+        }}>
+          <h3 style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            margin: '0 0 16px 0',
+            fontWeight: '800'
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px'
+            }}>
+              💰
+            </div>
+            Cash Flow to Next Payday
+            <div style={{ marginLeft: 'auto', fontSize: '12px' }}>
+              <div style={{
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '10px',
+                fontWeight: '700',
+                background: 'rgba(255,107,157,0.1)',
+                color: '#ff6b9d',
+                border: '1px solid rgba(255,107,157,0.3)'
+              }}>
+                🗓️ 12 days remaining
+              </div>
+            </div>
+          </h3>
+
+          <div style={{ margin: '20px 0' }}>
+            {/* Payday countdown */}
+            <div style={{
+              textAlign: 'center',
+              marginBottom: '20px',
+              padding: '16px',
+              background: 'rgba(0,212,255,0.1)',
+              borderRadius: '12px'
+            }}>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: '#00d4ff' }}>
+                Next Payday: Aug 29
+              </div>
+              <div style={{ color: '#9aa3b2' }}>Expected: $3,247.85</div>
+            </div>
+
+            {/* Running balance table */}
+            <div style={{
+              background: 'rgba(20, 22, 27, 0.8)',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '80px 1fr 100px 100px',
+                gap: '8px',
+                padding: '12px',
+                background: 'rgba(124,92,255,0.1)',
+                fontWeight: '700',
+                fontSize: '12px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div>DATE</div>
+                <div>DESCRIPTION</div>
+                <div>AMOUNT</div>
+                <div>BALANCE</div>
+              </div>
+              
+              {/* Current balance */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '80px 1fr 100px 100px',
+                gap: '8px',
+                padding: '8px 12px',
+                fontSize: '14px',
+                borderBottom: '1px solid rgba(255,255,255,0.05)'
+              }}>
+                <div style={{ color: '#9aa3b2' }}>8/17</div>
+                <div style={{ fontWeight: '600' }}>💎 Current Total Balance</div>
+                <div style={{ color: '#00d4ff', fontWeight: '700' }}>
+                  {formatCurrency(appData.totals.netWorth)}
+                </div>
+                <div style={{ color: '#00d4ff', fontWeight: '700' }}>
+                  {formatCurrency(appData.totals.netWorth)}
+                </div>
+              </div>
+
+              {/* Predicted transactions */}
+              {appData.predictions.map((pred, index) => {
+                const runningBalance = appData.totals.netWorth + (index + 1) * 50; // Simplified for demo
+                const isPayday = pred.description.includes('PAYDAY');
+                
+                return (
+                  <div 
+                    key={index}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '80px 1fr 100px 100px',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      fontSize: '14px',
+                      borderBottom: '1px solid rgba(255,255,255,0.05)',
+                      background: isPayday ? 'rgba(23,201,100,0.1)' : 'rgba(255,255,255,0.02)'
+                    }}
+                  >
+                    <div style={{ color: '#9aa3b2' }}>
+                      {new Date(pred.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}
+                    </div>
+                    <div style={isPayday ? { fontWeight: 'bold', color: '#17c964' } : {}}>
+                      {pred.description}
+                    </div>
+                    <div style={{
+                      fontWeight: '700',
+                      color: pred.amount > 0 ? '#17c964' : '#ff5470'
+                    }}>
+                      {pred.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(pred.amount))}
+                    </div>
+                    <div style={{
+                      fontWeight: '700',
+                      color: isPayday ? '#17c964' : '#00d4ff'
+                    }}>
+                      {formatCurrency(runningBalance)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Summary */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+              <div style={{
+                padding: '12px',
+                background: 'rgba(255,107,157,0.1)',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '18px', fontWeight: '800', color: '#ff6b9d' }}>
+                  $24,401
+                </div>
+                <div style={{ fontSize: '12px', color: '#9aa3b2' }}>Balance Before Payday</div>
+              </div>
+              <div style={{
+                padding: '12px',
+                background: 'rgba(23,201,100,0.1)',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '18px', fontWeight: '800', color: '#17c964' }}>
+                  $27,649
+                </div>
+                <div style={{ fontSize: '12px', color: '#9aa3b2' }}>Balance After Payday</div>
+              </div>
+            </div>
+
+            <div style={{
+              marginTop: '12px',
+              padding: '10px',
+              background: 'rgba(78,205,196,0.1)',
+              borderRadius: '12px'
+            }}>
+              <span style={{ color: '#4ecdc4', fontWeight: 'bold' }}>🧠 AI Cash Flow Insight:</span>
+              <span style={{ color: '#9aa3b2', marginLeft: '8px' }}>
+                You'll have $24,401 available until next payday. That's a healthy $2,034/day average spend capacity with 94% confidence.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Intelligent Transaction Stream */}
+        <div style={{
+          background: 'rgba(20, 22, 27, 0.8)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '24px',
+          padding: '24px'
+        }}>
+          <h3 style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            margin: '0 0 16px 0',
+            fontWeight: '800'
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px'
+            }}>
+              ⚡
+            </div>
+            Intelligent Transaction Stream
+            <div style={{ marginLeft: 'auto', fontSize: '12px' }}>
+              <div style={{
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '10px',
+                fontWeight: '700',
+                background: 'rgba(255,107,157,0.1)',
+                color: '#ff6b9d',
+                border: '1px solid rgba(255,107,157,0.3)'
+              }}>
+                AI-Powered
+              </div>
+            </div>
+          </h3>
+
+          <div style={{
+            maxHeight: '400px',
+            overflowY: 'auto',
+            background: 'rgba(20, 22, 27, 0.8)',
+            borderRadius: '16px',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            {appData.transactions.map(tx => (
+              <div
+                key={tx.id}
+                onClick={() => showModal(`💳 ${tx.merchant}`, `
+                  <div style="margin: 20px 0;">
+                    <div style="text-center; padding: 20px; background: rgba(255,107,157,0.1); border-radius: 12px; margin-bottom: 16px;">
+                      <div style="font-size: 32px; font-weight: 800; color: ${tx.amount > 0 ? '#17c964' : '#ff6b9d'};">${tx.amount > 0 ? '+' : ''}${formatCurrency(Math.abs(tx.amount))}</div>
+                      <div style="color: #9aa3b2;">${tx.merchant}</div>
+                      <div style="font-size: 12px; color: #9aa3b2;">${tx.date} • AI: ${tx.confidence}%</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(78,205,196,0.1); border-radius: 12px;">
+                      <strong style="color: #4ecdc4;">🧠 AI Analysis:</strong> High confidence transaction in ${tx.category} category.
+                    </div>
+                  </div>
+                `)}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  background: tx.new ? 'rgba(0, 212, 255, 0.05)' : 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(124, 92, 255, 0.05)';
+                  e.currentTarget.style.transform = 'translateX(4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = tx.new ? 'rgba(0, 212, 255, 0.05)' : 'transparent';
+                  e.currentTarget.style.transform = 'translateX(0)';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    background: 
+                      tx.category === 'Income' ? '#00d4ff' :
+                      tx.category === 'Groceries' ? '#17c964' :
+                      tx.category === 'Transportation' ? '#7c5cff' :
+                      tx.category === 'Food & Dining' ? '#ffb703' : '#ff5470',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '16px'
+                  }}>
+                    {tx.category === 'Income' ? '💰' :
+                     tx.category === 'Groceries' ? '🥬' :
+                     tx.category === 'Transportation' ? '🚗' :
+                     tx.category === 'Food & Dining' ? '☕' : '🛍️'}
                   </div>
                   <div>
-                    <div className="font-semibold">{tx.merchant}</div>
-                    <div className="text-sm text-purple-300">
-                      {tx.date} • {tx.owner === 'steve' ? 'Steve' : 'Sarah'} • AI: {tx.aiConfidence}%
+                    <div style={{ fontWeight: '700' }}>{tx.merchant}</div>
+                    <div style={{ fontSize: '12px', color: '#9aa3b2' }}>
+                      {tx.date} • {tx.account} • AI: {tx.confidence}%
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#7c5cff', fontWeight: '600' }}>
+                      {tx.category}
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className={`text-xl font-bold ${tx.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {tx.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(tx.amount))}
-                  </div>
-                  <div className="text-sm text-purple-300">{tx.category}</div>
+                <div style={{
+                  fontWeight: '800',
+                  fontSize: '16px',
+                  color: tx.amount > 0 ? '#17c964' : '#ff5470'
+                }}>
+                  {tx.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(tx.amount))}
                 </div>
+                {tx.new && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    background: '#00d4ff',
+                    color: '#fff',
+                    fontSize: '8px',
+                    padding: '2px 6px',
+                    borderRadius: '8px',
+                    fontWeight: '700'
+                  }}>
+                    NEW
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -785,56 +1776,128 @@ Family financial health rank: Top 8% of households.
 
       {/* AI Assistant Modal */}
       {showAIAssistant && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900/90 backdrop-blur-lg border border-purple-500/30 rounded-xl p-6 max-w-md w-full max-h-[80vh] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+        <div style={{
+          position: 'fixed',
+          inset: '0',
+          background: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: '10000',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{
+            background: 'rgba(20, 22, 27, 0.8)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 107, 157, 0.3)',
+            borderRadius: '24px',
+            padding: '32px',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '600px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #ff6b9d, #4ecdc4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '20px'
+                }}>
                   🧠
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Family AI Assistant</h3>
-                  <p className="text-purple-300 text-sm">Analyzing 4 accounts & dual income</p>
+                  <div style={{ fontWeight: '700', color: '#ff6b9d' }}>Financial AI</div>
+                  <div style={{ fontSize: '10px', color: '#9aa3b2' }}>
+                    Your Personal Finance Assistant
+                  </div>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowAIAssistant(false)}
-                className="text-purple-300 hover:text-white"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#e7ecf3',
+                  cursor: 'pointer',
+                  fontSize: '20px'
+                }}
               >
                 ✕
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto space-y-3 mb-4 max-h-60">
+            <div style={{
+              flex: '1',
+              maxHeight: '300px',
+              overflowY: 'auto',
+              marginBottom: '16px'
+            }}>
               {aiMessages.map((msg, index) => (
-                <div 
+                <div
                   key={index}
-                  className={`p-3 rounded-lg ${
-                    msg.type === 'ai' 
-                      ? 'bg-purple-600/20 border border-purple-500/30' 
-                      : 'bg-blue-600/20 border border-blue-500/30'
-                  }`}
+                  style={{
+                    marginBottom: '12px',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    background: msg.type === 'ai' ? 
+                      'rgba(255,107,157,0.1)' : 'rgba(124,92,255,0.1)',
+                    border: msg.type === 'ai' ? 
+                      '1px solid rgba(255,107,157,0.2)' : '1px solid rgba(124,92,255,0.2)'
+                  }}
                 >
-                  <div className="font-semibold text-sm mb-1">
-                    {msg.type === 'ai' ? '🧠 Family AI:' : '👤 You:'}
-                  </div>
-                  <div className="text-sm">{msg.message}</div>
+                  <strong style={{ 
+                    color: msg.type === 'ai' ? '#ff6b9d' : '#7c5cff',
+                    fontSize: '12px'
+                  }}>
+                    {msg.type === 'ai' ? '🧠 AI Assistant:' : '👤 You:'}
+                  </strong>
+                  <br />
+                  <span style={{ fontSize: '14px' }}>{msg.message}</span>
                 </div>
               ))}
             </div>
             
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
                 value={aiChatInput}
                 onChange={(e) => setAiChatInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAIMessage()}
-                placeholder="Ask about family finances..."
-                className="flex-1 bg-white/10 border border-purple-500/30 rounded-lg px-3 py-2 text-white placeholder-purple-300"
+                placeholder="Ask me anything about your finances..."
+                style={{
+                  flex: '1',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '20px',
+                  padding: '8px 16px',
+                  color: '#e7ecf3',
+                  fontSize: '14px'
+                }}
               />
-              <button 
+              <button
                 onClick={handleAIMessage}
-                className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors"
+                style={{
+                  background: 'linear-gradient(135deg, #ff6b9d, #4ecdc4)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '16px'
+                }}
               >
                 🚀
               </button>
@@ -845,97 +1908,112 @@ Family financial health rank: Top 8% of households.
 
       {/* Export Modal */}
       {showExportModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900/90 backdrop-blur-lg border border-purple-500/30 rounded-xl p-6 max-w-lg w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold">📊 Export Family Data</h3>
-              <button 
+        <div style={{
+          position: 'fixed',
+          inset: '0',
+          background: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: '10000',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{
+            background: 'rgba(20, 22, 27, 0.8)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '24px',
+            padding: '32px',
+            maxWidth: '600px',
+            width: '90%'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '24px'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '24px' }}>📊 Export Financial Data</h3>
+              <button
                 onClick={() => setShowExportModal(false)}
-                className="text-purple-300 hover:text-white text-xl"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#e7ecf3',
+                  cursor: 'pointer',
+                  fontSize: '20px'
+                }}
               >
                 ✕
               </button>
             </div>
             
-            <div className="space-y-4">
-              <button 
-                onClick={() => exportData('cashflow')}
-                className="w-full p-4 bg-green-600/20 border border-green-500/30 rounded-lg hover:bg-green-600/30 transition-colors text-left"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-green-400">💰 Family Cash Flow Tracker</div>
-                    <div className="text-sm text-green-300">Google Sheets style with paydays</div>
-                  </div>
-                  <span className="text-2xl">💾</span>
-                </div>
-              </button>
-              
-              <button 
-                onClick={() => exportData('transactions')}
-                className="w-full p-4 bg-blue-600/20 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors text-left"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-blue-400">📊 All Transactions CSV</div>
-                    <div className="text-sm text-blue-300">With AI categorization & confidence</div>
-                  </div>
-                  <span className="text-2xl">📋</span>
-                </div>
-              </button>
-              
-              <button 
-                onClick={() => exportData('family-budget')}
-                className="w-full p-4 bg-purple-600/20 border border-purple-500/30 rounded-lg hover:bg-purple-600/30 transition-colors text-left"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-purple-400">📈 Family Budget Analysis</div>
-                    <div className="text-sm text-purple-300">Combined income & spending breakdown</div>
-                  </div>
-                  <span className="text-2xl">📊</span>
-                </div>
-              </button>
-              
-              <button 
-                onClick={() => exportData('ai-report')}
-                className="w-full p-4 bg-pink-600/20 border border-pink-500/30 rounded-lg hover:bg-pink-600/30 transition-colors text-left"
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-pink-400">🧠 AI Family Report</div>
-                    <div className="text-sm text-pink-300">Complete analysis with insights</div>
-                  </div>
-                  <span className="text-2xl">📄</span>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Details Modal */}
-      {showDetailsModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900/90 backdrop-blur-lg border border-purple-500/30 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-bold">{modalContent.title}</h3>
-              <button 
-                onClick={() => setShowDetailsModal(false)}
-                className="text-purple-300 hover:text-white text-xl"
-              >
-                ✕
-              </button>
-            </div>
-            <div 
-              className="prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: modalContent.content }}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default PhenomenalFamilyTracker;
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {[
+                {
+                  id: 'transactions-csv',
+                  title: '📊 Transactions CSV',
+                  desc: 'All 247 transactions with AI categorization',
+                  color: '#17c964'
+                },
+                {
+                  id: 'budget-excel',
+                  title: '📈 Budget Analysis Excel',
+                  desc: 'Spending by category with AI insights',
+                  color: '#4ecdc4'
+                },
+                {
+                  id: 'cashflow-excel',
+                  title: '💰 Cash Flow Tracker Excel',
+                  desc: 'Your payday-to-payday tracking like Google Sheets',
+                  color: '#00d4ff'
+                },
+                {
+                  id: 'ai-report-pdf',
+                  title: '🧠 AI Financial Report PDF',
+                  desc: 'Complete analysis with predictions and insights',
+                  color: '#ff6b9d'
+                },
+                {
+                  id: 'tax-summary',
+                  title: '📋 Tax Summary CSV',
+                  desc: 'Income and deductible expenses for tax prep',
+                  color: '#7c5cff'
+                }
+              ].map(option => (
+                <button
+                  key={option.id}
+                  onClick={() => exportData(option.id)}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    background: `rgba(${
+                      option.color === '#17c964' ? '23,201,100' :
+                      option.color === '#4ecdc4' ? '78,205,196' :
+                      option.color === '#00d4ff' ? '0,212,255' :
+                      option.color === '#ff6b9d' ? '255,107,157' : '124,92,255'
+                    },0.1)`,
+                    border: `1px solid rgba(${
+                      option.color === '#17c964' ? '23,201,100' :
+                      option.color === '#4ecdc4' ? '78,205,196' :
+                      option.color === '#00d4ff' ? '0,212,255' :
+                      option.color === '#ff6b9d' ? '255,107,157' : '124,92,255'
+                    },0.3)`,
+                    borderRadius: '12px',
+                    color: '#e7ecf3',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
